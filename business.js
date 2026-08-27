@@ -25,7 +25,7 @@ contactForm.addEventListener('submit', async (e) => {
   submitBtn.innerText = 'Sending...';
 
   try {
-    const response = await fetch('http://localhost:5000/api/contact', {
+    const response = await fetch('https://city-money-backened.onrender.com/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, details })

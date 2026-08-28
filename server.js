@@ -8,13 +8,9 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Enable explicit CORS for all incoming requests
-app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type']
-}));
-
+// Enable CORS for all routes and preflight requests
+app.use(cors({ origin: '*' }));
+app.options('*', cors());
 app.use(express.json());
 
 const LEADS_FILE = path.join(__dirname, 'leads.json');
@@ -33,7 +29,7 @@ app.post('/api/contacts', async (req, res) => {
     const { name, email, details } = req.body;
 
     try {
-        // 1. Save lead to leads.json
+        // 1. Save lead to local JSON
         let leads = [];
         if (fs.existsSync(LEADS_FILE)) {
             const fileData = fs.readFileSync(LEADS_FILE, 'utf8');
@@ -42,19 +38,20 @@ app.post('/api/contacts', async (req, res) => {
         leads.push({ name, email, details, date: new Date().toISOString() });
         fs.writeFileSync(LEADS_FILE, JSON.stringify(leads, null, 2));
 
-        // 2. Send email notification
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: process.env.EMAIL_USER,
-            subject: `New Project Request from ${name}`,
-            text: `Name: ${name}\nEmail: ${email}\nProject Details: ${details}`
-        };
+        // 2. Send email notification if credentials exist
+        if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+            await transporter.sendMail({
+                from: process.env.EMAIL_USER,
+                to: process.env.EMAIL_USER,
+                subject: `New Project Request from ${name}`,
+                text: `Name: ${name}\nEmail: ${email}\nProject Details: ${details}`
+            });
+        }
 
-        await transporter.sendMail(mailOptions);
-        res.status(200).json({ success: true, message: 'Message sent successfully!' });
+        return res.status(200).json({ success: true, message: 'Message sent successfully!' });
     } catch (error) {
         console.error('Server Error:', error);
-        res.status(500).json({ success: false, message: 'Server error processing request.' });
+        return res.status(500).json({ success: false, message: error.message });
     }
 });
 

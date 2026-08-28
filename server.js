@@ -8,8 +8,13 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Enable CORS and body parser BEFORE routes
-app.use(cors());
+// Enable explicit CORS for all incoming requests
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type']
+}));
+
 app.use(express.json());
 
 const LEADS_FILE = path.join(__dirname, 'leads.json');
